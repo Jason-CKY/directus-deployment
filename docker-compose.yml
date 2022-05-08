@@ -21,14 +21,17 @@ services:
   directus:
     container_name: directus
     # image: directus/directus:9.0.0-rc.91
-    image: directus/directus:9.9
+    image: directus/directus:9.10
     ports:
       - 8055:8055
+    restart: on-failure
     networks:
       - directus
+      - auth
     depends_on:
       - cache
       - database
+      - keycloak
     environment:
       KEY: '255d861b-5ea1-5996-9aa3-922530ec40b1'
       SECRET: '6116487b-cda1-52c2-b5b5-c8022c45e263'
@@ -47,13 +50,55 @@ services:
       ADMIN_EMAIL: 'admin@example.com'
       ADMIN_PASSWORD: 'password'
 
+      AUTH_PROVIDERS: "keycloak"
+      AUTH_KEYCLOAK_DRIVER: "openid"
+      AUTH_KEYCLOAK_CLIENT_ID: "directus"
+      AUTH_KEYCLOAK_CLIENT_SECRET: "hLooPN5Xyblb42mmd6Ku3TV3tY8nj4qq"
+      AUTH_KEYCLOAK_ICON: "vpn_key"
+      AUTH_KEYCLOAK_ISSUER_URL: "http://keycloak:8080/auth/realms/production/.well-known/openid-configuration"
+      AUTH_KEYCLOAK_IDENTIFIER_KEY: "email"
+      AUTH_KEYCLOAK_SCOPE: "openid email"
+      LOG_LEVEL: "trace"
+      AUTH_KEYCLOAK_ALLOW_PUBLIC_REGISTRATION: "true"
+      AUTH_KEYCLOAK_DEFAULT_ROLE_ID: "7263a534-0fc1-4f15-91d3-9a3d864975e9"
       # Make sure to set this in production
       # (see https://docs.directus.io/configuration/config-options/#general)
-      # PUBLIC_URL: 'https://directus.example.com'
+      PUBLIC_URL: 'http://localhost:8055'
+
+  keycloak:
+    image: jboss/keycloak:latest
+    container_name: keycloak
+    networks:
+      - auth
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - DB_VENDOR=POSTGRES
+      - DB_ADDR=keycloak-database
+      - DB_DATABASE=keycloak
+      - DB_USER=keycloak
+      - DB_SCHEMA=public
+      - DB_PASSWORD=keycloak
+    ports:
+      - 8080:8080
+  
+  keycloak-database:
+    container_name: kc-database
+    image: postgres:12
+    volumes:
+      - kc-db:/var/lib/postgresql/data
+    networks:
+      - auth
+    environment:
+      POSTGRES_USER: 'keycloak'
+      POSTGRES_PASSWORD: 'keycloak'
+      POSTGRES_DB: 'keycloak'
+
 
 networks:
   directus:
+  auth:
 
 volumes:
   directus-db:
-
+  kc-db:
