@@ -1,0 +1,1 @@
+"use strict";const e=require("express-prom-bundle");module.exports=({init:o})=>{o("routes.before",(({app:o})=>{console.log("TEST"),o.use(e({includeMethod:!0,includePath:!0,promClient:{collectDefaultMetrics:{}}}))}))};
